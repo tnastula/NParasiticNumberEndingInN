@@ -4,99 +4,53 @@ namespace NParasiticNumberEndingInN;
 
 public class ParasiticNumberFinder
 {
-    private readonly int TrailingDigit;
-    private readonly int NumberBase;
-    private static readonly Dictionary<int, char> DigitToSymbol;
-
-    static ParasiticNumberFinder()
-    {
-        DigitToSymbol = new()
-        {
-            { 0, '0' },
-            { 1, '1' },
-            { 2, '2' },
-            { 3, '3' },
-            { 4, '4' },
-            { 5, '5' },
-            { 6, '6' },
-            { 7, '7' },
-            { 8, '8' },
-            { 9, '9' },
-            { 10, 'A' },
-            { 11, 'B' },
-            { 12, 'C' },
-            { 13, 'D' },
-            { 14, 'E' },
-            { 15, 'F' }
-        };
-    }
+    private readonly int _trailingDigit;
+    private readonly int _numberBase;
 
     public ParasiticNumberFinder(int trailingDigit, int numberBase)
     {
-        TrailingDigit = trailingDigit;
-        NumberBase = numberBase;
+        _trailingDigit = trailingDigit;
+        _numberBase = numberBase;
     }
 
     public string Calculate()
     {
-        double divider = TrailingDigit * NumberBase - 1;
-        double valueContainingPeriod = TrailingDigit / divider;
-
+        double dividend = _trailingDigit;
+        double divider = _trailingDigit * _numberBase - 1;
         List<int> digitSequence = new();
         List<int>? repeatingSequence = null;
-        double magnitude = 1.0 / NumberBase;
 
-        while (valueContainingPeriod > 0)
+        while (repeatingSequence == null)
         {
-            if (magnitude == 0)
-                break;
+            int nextDigit = (int)(dividend / divider);
+            if (nextDigit != 0 || digitSequence.Count > 0)
+            {
+                digitSequence.Add(nextDigit);
+            }
 
-            int digit = (int)(valueContainingPeriod / magnitude);
-            valueContainingPeriod -= digit * magnitude;
-            magnitude /= NumberBase;
+            dividend -= nextDigit * divider;
+            dividend *= _numberBase;
 
-            if (digitSequence.Count == 0 && digit == 0)
-                continue;
-
-            digitSequence.Add(digit);
-
-            repeatingSequence = FindFirstRepeatingSequence(digitSequence);
-            if (repeatingSequence != null)
-                break;
+            if (digitSequence.Count > 1 && digitSequence.Last() == _trailingDigit)
+            {
+                repeatingSequence = FindFirstRepeatingSequence(digitSequence);
+            }
         }
 
-        return ToBaseString(repeatingSequence ?? new List<int>());
-    }
-
-    private string ToBaseString(List<int> digitSequence)
-    {
-        StringBuilder stringBuilder = new();
-        foreach (var digit in digitSequence)
-        {
-            stringBuilder.Append(DigitToSymbol[digit]);
-        }
-
-        return stringBuilder.ToString();
+        return ToBaseString(repeatingSequence);
     }
 
     private List<int>? FindFirstRepeatingSequence(List<int> digitSequence)
     {
-        if (digitSequence.Count <= 1)
-            return null;
-
-        int length = 1;
-        int terminatingLength = digitSequence.Count / 2;
-
-        while (!VerifyRepeats(digitSequence, length))
+        for (int digitIndex = 1; digitIndex < digitSequence.Count / 2; digitIndex++)
         {
-            length++;
-            if (length > terminatingLength)
+            if (digitSequence[digitIndex] == _trailingDigit && VerifyRepeats(digitSequence, digitIndex + 1))
             {
-                return null;
+                return digitSequence.GetRange(0, digitIndex + 1);
             }
         }
 
-        return digitSequence.GetRange(0, length);
+        return null;
     }
 
     private bool VerifyRepeats(List<int> digitSequence, int length)
@@ -118,5 +72,19 @@ public class ParasiticNumberFinder
         }
 
         return true;
+    }
+
+    private string ToBaseString(List<int> digitSequence)
+    {
+        StringBuilder stringBuilder = new();
+        foreach (var digit in digitSequence)
+        {
+            char symbol = digit < 10 
+                ? (char)(digit + 48) 
+                : (char)(digit + 55);
+            stringBuilder.Append(symbol);
+        }
+
+        return stringBuilder.ToString();
     }
 }
